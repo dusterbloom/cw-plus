@@ -544,6 +544,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "cw20-base-demurrage"
+version = "0.13.1"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-storage-plus",
+ "cw-utils",
+ "cw2",
+ "cw20",
+ "schemars",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
 name = "cw20-ics20"
 version = "0.13.1"
 dependencies = [
