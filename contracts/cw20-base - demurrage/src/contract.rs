@@ -1,9 +1,7 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{
-    to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Uint128,
-};
-
+use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Uint128};
+use std::option::Option;
 use cw2::set_contract_version;
 use cw20::{
     BalanceResponse, Cw20Coin, Cw20ReceiveMsg, DownloadLogoResponse, EmbeddedLogo, Logo, LogoInfo,
@@ -16,8 +14,8 @@ use crate::allowances::{
 };
 use crate::enumerable::{query_all_accounts, query_all_allowances};
 use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{MinterData, TokenInfo, BALANCES, LOGO, MARKETING_INFO, TOKEN_INFO};
+use crate::msg::{ExecuteMsg, InstantiateDemurrageInfo, DemurrageInfoResponse, InstantiateMsg, QueryMsg};
+use crate::state::{MinterData, TokenInfo, BALANCES, LOGO, MARKETING_INFO, TOKEN_INFO, DemurrageData, DEMURRAGE_INFO};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:cw20-base";
@@ -119,7 +117,7 @@ pub fn instantiate(
         symbol: msg.symbol,
         decimals: msg.decimals,
         total_supply,
-        mint,
+        mint
     };
     TOKEN_INFO.save(deps.storage, &data)?;
 
@@ -146,6 +144,20 @@ pub fn instantiate(
             logo,
         };
         MARKETING_INFO.save(deps.storage, &data)?;
+    }
+
+    if let Some(demurrage) = msg.demurrage {
+
+        let data = DemurrageInfoResponse {
+            controller: demurrage.controller,
+            rate: demurrage.rate,
+            block_time: demurrage.block_time,
+            escrow: demurrage.escrow,
+
+            ibc: demurrage.ibc,
+            heartbeat: demurrage.heartbeat
+        };
+        DEMURRAGE_INFO.save(deps.storage, &data)?;
     }
 
     Ok(Response::default())
@@ -225,6 +237,7 @@ pub fn execute(
             marketing,
         } => execute_update_marketing(deps, env, info, project, description, marketing),
         ExecuteMsg::UploadLogo(logo) => execute_upload_logo(deps, env, info, logo),
+        ExecuteMsg::UpdateMinter { new_minter } => todo!()
     }
 }
 
@@ -430,6 +443,58 @@ pub fn execute_update_marketing(
     Ok(res)
 }
 
+
+// pub fn execute_update_minter(
+//     deps: DepsMut,
+//     _env: Env,
+//     info: MessageInfo,
+//     new_minter: Option<String>
+// ) -> Result<Response, ContractError> {
+//     let mut minter_info = MINTER_INFO
+//         .may_load(deps.storage)?
+//         .ok_or(ContractError::Unauthorized {})?;
+//
+//     if marketing_info
+//         .marketing
+//         .as_ref()
+//         .ok_or(ContractError::Unauthorized {})?
+//         != &info.sender
+//     {
+//         return Err(ContractError::Unauthorized {});
+//     }
+//
+//     match project {
+//         Some(empty) if empty.trim().is_empty() => marketing_info.project = None,
+//         Some(project) => marketing_info.project = Some(project),
+//         None => (),
+//     }
+//
+//     match description {
+//         Some(empty) if empty.trim().is_empty() => marketing_info.description = None,
+//         Some(description) => marketing_info.description = Some(description),
+//         None => (),
+//     }
+//
+//     match marketing {
+//         Some(empty) if empty.trim().is_empty() => marketing_info.marketing = None,
+//         Some(marketing) => marketing_info.marketing = Some(deps.api.addr_validate(&marketing)?),
+//         None => (),
+//     }
+//
+//     if marketing_info.project.is_none()
+//         && marketing_info.description.is_none()
+//         && marketing_info.marketing.is_none()
+//         && marketing_info.logo.is_none()
+//     {
+//         MARKETING_INFO.remove(deps.storage);
+//     } else {
+//         MARKETING_INFO.save(deps.storage, &marketing_info)?;
+//     }
+//
+//     let res = Response::new().add_attribute("action", "update_marketing");
+//     Ok(res)
+// }
+
 pub fn execute_upload_logo(
     deps: DepsMut,
     _env: Env,
@@ -592,6 +657,7 @@ mod tests {
             }],
             mint: mint.clone(),
             marketing: None,
+            demurrage: None
         };
         let info = mock_info("creator", &[]);
         let env = mock_env();
@@ -632,6 +698,7 @@ mod tests {
                 }],
                 mint: None,
                 marketing: None,
+                demurrage: None
             };
             let info = mock_info("creator", &[]);
             let env = mock_env();
@@ -672,6 +739,7 @@ mod tests {
                     cap: Some(limit),
                 }),
                 marketing: None,
+                demurrage: None
             };
             let info = mock_info("creator", &[]);
             let env = mock_env();
@@ -719,6 +787,7 @@ mod tests {
                     cap: Some(limit),
                 }),
                 marketing: None,
+                demurrage: None
             };
             let info = mock_info("creator", &[]);
             let env = mock_env();
@@ -747,6 +816,7 @@ mod tests {
                         marketing: Some("marketing".to_owned()),
                         logo: Some(Logo::Url("url".to_owned())),
                     }),
+                    demurrage: None
                 };
 
                 let info = mock_info("creator", &[]);
@@ -787,6 +857,7 @@ mod tests {
                         marketing: Some("m".to_owned()),
                         logo: Some(Logo::Url("url".to_owned())),
                     }),
+                    demurrage: None
                 };
 
                 let info = mock_info("creator", &[]);
@@ -913,6 +984,7 @@ mod tests {
             ],
             mint: None,
             marketing: None,
+            demurrage: None
         };
         let err =
             instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap_err();
@@ -935,6 +1007,7 @@ mod tests {
             ],
             mint: None,
             marketing: None,
+            demurrage: None
         };
         let res = instantiate(deps.as_mut(), env, info, instantiate_msg).unwrap();
         assert_eq!(0, res.messages.len());
@@ -1189,6 +1262,7 @@ mod tests {
                     marketing: Some("marketing".to_owned()),
                     logo: Some(Logo::Url("url".to_owned())),
                 }),
+                demurrage: None
             };
 
             let info = mock_info("creator", &[]);
@@ -1243,6 +1317,7 @@ mod tests {
                     marketing: Some("creator".to_owned()),
                     logo: Some(Logo::Url("url".to_owned())),
                 }),
+                demurrage: None
             };
 
             let info = mock_info("creator", &[]);
@@ -1296,6 +1371,7 @@ mod tests {
                     marketing: Some("creator".to_owned()),
                     logo: Some(Logo::Url("url".to_owned())),
                 }),
+                demurrage: None
             };
 
             let info = mock_info("creator", &[]);
@@ -1349,6 +1425,7 @@ mod tests {
                     marketing: Some("creator".to_owned()),
                     logo: Some(Logo::Url("url".to_owned())),
                 }),
+                demurrage: None
             };
 
             let info = mock_info("creator", &[]);
@@ -1402,6 +1479,7 @@ mod tests {
                     marketing: Some("creator".to_owned()),
                     logo: Some(Logo::Url("url".to_owned())),
                 }),
+                demurrage: None
             };
 
             let info = mock_info("creator", &[]);
@@ -1455,6 +1533,7 @@ mod tests {
                     marketing: Some("creator".to_owned()),
                     logo: Some(Logo::Url("url".to_owned())),
                 }),
+                demurrage: None
             };
 
             let info = mock_info("creator", &[]);
@@ -1508,6 +1587,7 @@ mod tests {
                     marketing: Some("creator".to_owned()),
                     logo: Some(Logo::Url("url".to_owned())),
                 }),
+                demurrage: None
             };
 
             let info = mock_info("creator", &[]);
@@ -1565,6 +1645,7 @@ mod tests {
                     marketing: Some("creator".to_owned()),
                     logo: Some(Logo::Url("url".to_owned())),
                 }),
+                demurrage: None
             };
 
             let info = mock_info("creator", &[]);
@@ -1618,6 +1699,7 @@ mod tests {
                     marketing: Some("creator".to_owned()),
                     logo: Some(Logo::Url("url".to_owned())),
                 }),
+                demurrage: None
             };
 
             let info = mock_info("creator", &[]);
@@ -1667,6 +1749,7 @@ mod tests {
                     marketing: Some("creator".to_owned()),
                     logo: Some(Logo::Url("url".to_owned())),
                 }),
+                demurrage: None
             };
 
             let info = mock_info("creator", &[]);
@@ -1717,6 +1800,7 @@ mod tests {
                     marketing: Some("creator".to_owned()),
                     logo: Some(Logo::Url("url".to_owned())),
                 }),
+                demurrage: None
             };
 
             let info = mock_info("creator", &[]);
@@ -1768,6 +1852,7 @@ mod tests {
                     marketing: Some("creator".to_owned()),
                     logo: Some(Logo::Url("url".to_owned())),
                 }),
+                demurrage: None
             };
 
             let info = mock_info("creator", &[]);
@@ -1818,6 +1903,7 @@ mod tests {
                     marketing: Some("creator".to_owned()),
                     logo: Some(Logo::Url("url".to_owned())),
                 }),
+                demurrage: None
             };
 
             let info = mock_info("creator", &[]);
@@ -1875,6 +1961,7 @@ mod tests {
                     marketing: Some("creator".to_owned()),
                     logo: Some(Logo::Url("url".to_owned())),
                 }),
+                demurrage: None
             };
 
             let info = mock_info("creator", &[]);
@@ -1925,6 +2012,7 @@ mod tests {
                     marketing: Some("creator".to_owned()),
                     logo: Some(Logo::Url("url".to_owned())),
                 }),
+                demurrage: None
             };
 
             let info = mock_info("creator", &[]);

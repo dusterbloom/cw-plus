@@ -1,4 +1,4 @@
-use cosmwasm_std::{StdError, StdResult, Uint128};
+use cosmwasm_std::{Addr, StdError, StdResult, Uint128};
 use cw20::{Cw20Coin, Logo, MinterResponse};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -13,6 +13,28 @@ pub struct InstantiateMarketingInfo {
     pub logo: Option<Logo>,
 }
 
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]
+pub struct DemurrageInfoResponse {
+    pub controller: Option<Addr>,
+    pub rate: Option<i128>,
+    pub block_time: Option<i32>, // check this
+    pub escrow: Option<Addr>, // Vault
+    pub ibc: Option<bool>,
+    pub heartbeat: Option <i32>, // number of blocks
+}
+
+
+#[derive(Serialize, Deserialize, JsonSchema, Debug, Clone, PartialEq)]
+pub struct InstantiateDemurrageInfo {
+    pub controller: Option<Addr>,
+    pub rate: Option<i128>,
+    pub block_time: Option<i32>, // check this
+    pub escrow: Option<Addr>, // Vault
+    pub ibc: Option<bool>,
+    pub heartbeat: Option<i32>, // number of blocks
+}
+
+
 #[derive(Serialize, Deserialize, JsonSchema, Debug, Clone, PartialEq)]
 pub struct InstantiateMsg {
     pub name: String,
@@ -21,6 +43,8 @@ pub struct InstantiateMsg {
     pub initial_balances: Vec<Cw20Coin>,
     pub mint: Option<MinterResponse>,
     pub marketing: Option<InstantiateMarketingInfo>,
+    pub demurrage: Option<InstantiateDemurrageInfo>,
+
 }
 
 impl InstantiateMsg {
