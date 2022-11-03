@@ -28,10 +28,10 @@ pub struct MinterData {
 pub struct DemurrageData {
     pub controller: Addr,
     pub rate: i128,
-    pub blockTime: i32, // check this
+    pub block_time: i32, // check this
     pub escrow: Addr, // Vault
     pub ibc: bool,
-    pub hearbeat: i32, // number of blocks
+    pub heartbeat: i32, // number of blocks
 
 
     /// cap is how many more tokens can be issued by the minter
