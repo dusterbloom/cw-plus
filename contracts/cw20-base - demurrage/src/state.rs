@@ -6,8 +6,9 @@ use cw_storage_plus::{Item, Map};
 
 use cw20::{AllowanceResponse, Logo, MarketingInfoResponse};
 
+
+
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-#[serde(rename_all = "snake_case")]
 pub struct TokenInfo {
     pub name: String,
     pub symbol: String,
@@ -28,7 +29,7 @@ pub struct MinterData {
 pub struct DemurrageData {
     pub controller: Addr,
     pub rate: i128,
-    pub blockTime: i32, // check this
+    pub block_Time: i32, // check this
     pub escrow: Addr, // Vault
     pub ibc: bool,
     pub hearbeat: i32, // number of blocks

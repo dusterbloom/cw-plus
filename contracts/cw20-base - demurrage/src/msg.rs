@@ -1,11 +1,12 @@
 use cosmwasm_std::{StdError, StdResult, Uint128};
 use cw20::{Cw20Coin, Logo, MinterResponse};
 use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+// use serde::{Deserialize, Serialize};
+use cosmwasm_schema::{cw_serde, QueryResponses};
 
 pub use cw20::Cw20ExecuteMsg as ExecuteMsg;
 
-#[derive(Serialize, Deserialize, JsonSchema, Debug, Clone, PartialEq)]
+#[cw_serde]
 pub struct InstantiateMarketingInfo {
     pub project: Option<String>,
     pub description: Option<String>,
@@ -13,7 +14,7 @@ pub struct InstantiateMarketingInfo {
     pub logo: Option<Logo>,
 }
 
-#[derive(Serialize, Deserialize, JsonSchema, Debug, Clone, PartialEq)]
+#[cw_serde]
 pub struct InstantiateMsg {
     pub name: String,
     pub symbol: String,
@@ -68,7 +69,7 @@ fn is_valid_symbol(symbol: &str) -> bool {
     true
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     /// Returns the current balance of the given address, 0 if unset.
